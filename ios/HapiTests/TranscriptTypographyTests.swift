@@ -174,10 +174,8 @@ final class TranscriptTypographyTests: XCTestCase {
         let cell = try await browse(view, index: 25)
         let offset = cell.frame.minY - view.contentOffset.y
         for width: CGFloat in [1024, 768, 507, 320] {
-            print("ANCHOR before width=\(width) offset=\(view.contentOffset.y) frame=\(cell.frame)")
             driver.width = width
             await settle { abs(view.bounds.width - width) < 1 }
-            print("ANCHOR after width=\(width) offset=\(view.contentOffset.y)")
             let frame = try XCTUnwrap(view.cellForItem(at: IndexPath(item: 25, section: 0))).frame
             XCTAssertEqual(frame.width, HapiReadingLayout.contentWidth(in: width), accuracy: 1)
             XCTAssertEqual(frame.midX, width / 2, accuracy: 1)

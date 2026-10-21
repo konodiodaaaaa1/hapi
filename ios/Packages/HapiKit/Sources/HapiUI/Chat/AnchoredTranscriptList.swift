@@ -194,6 +194,11 @@ final class TranscriptLayout: UICollectionViewLayout {
                                                withOriginalAttributes: originalAttributes)
         let index = originalAttributes.indexPath.item
         guard ids.indices.contains(index), let view = collectionView else { return context }
+        // UIKit can report attributes from before a width/metrics reflow.
+        // Compare the viewport with our current geometry, just as the height
+        // delta below is relative to our current estimate, not the stale cell.
+        prepare()
+        let currentFrame = frames[index]
         let height = max(1, preferredAttributes.size.height)
         let delta = height - estimatedHeight(for: ids[index])
         heights[ids[index]] = height
@@ -201,15 +206,14 @@ final class TranscriptLayout: UICollectionViewLayout {
         dirtyFromIndex = min(dirtyFromIndex ?? index, index)
         context.invalidateItems(at: [preferredAttributes.indexPath])
         let viewportTop = view.contentOffset.y + view.adjustedContentInset.top
-        if followsTail || originalAttributes.frame.maxY <= viewportTop {
+        if followsTail || currentFrame.maxY <= viewportTop {
             context.contentOffsetAdjustment.y += delta
-        } else if originalAttributes.frame.minY <= viewportTop,
-                  originalAttributes.frame.minY + height <= viewportTop {
+        } else if currentFrame.minY <= viewportTop,
+                  currentFrame.minY + height <= viewportTop {
             // A font reduction can make the first partial row shorter than
             // the reading offset. Keep its last point visible, not a later row.
-            context.contentOffsetAdjustment.y += originalAttributes.frame.minY + height - 1 - viewportTop
+            context.contentOffsetAdjustment.y += currentFrame.minY + height - 1 - viewportTop
         }
-        print("MEASURE id=\(ids[index]) original=\(originalAttributes.frame) height=\(height) delta=\(delta) top=\(viewportTop) adjust=\(context.contentOffsetAdjustment.y) anchor=\(String(describing: anchorForUpdate))")
         return context
     }
 
@@ -398,7 +402,6 @@ public final class TranscriptCollectionController<Item: Identifiable & Equatable
         if next.isInspectionPresented { layout.followsTail = false }
         // Capture at COMMIT, after any reader motion during the request.
         layout.anchorForUpdate = layout.followsTail ? nil : captureAnchor()
-        if widthChanged { print("ANCHOR capture old=\(configuredWidth) new=\(collection.bounds.width) anchor=\(String(describing: layout.anchorForUpdate)) top=\(collection.contentOffset.y)") }
         configuration = next
         // Do not compare/whitelist EnvironmentValues: custom services and
         // closure captures must propagate too, even when every Item is equal.
@@ -427,7 +430,6 @@ public final class TranscriptCollectionController<Item: Identifiable & Equatable
             self.collection.layoutIfNeeded()
             let target = self.layout.targetContentOffset(forProposedContentOffset: self.collection.contentOffset)
             self.layout.correctOffset(to: target.y)
-            if widthChanged { print("ANCHOR restore target=\(target.y) actual=\(self.collection.contentOffset.y) anchor=\(String(describing: self.layout.anchorForUpdate))") }
             self.layout.anchorForUpdate = nil
             self.applying = false
             let addedRows = self.items.contains { $0.id != next.historyControlID && !oldIDs.contains($0.id) }

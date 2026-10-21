@@ -261,6 +261,10 @@ final class ToolTranscriptPresentationTests: XCTestCase {
         let count = collection.numberOfItems(inSection: 0)
         let planIndexPath = IndexPath(item: index, section: 0)
         let tailIndexPath = IndexPath(item: count - 1, section: 0)
+        // Match the reader gesture on the return trip below. scrollToItem does
+        // not send drag callbacks, so otherwise a pending update can restore
+        // the old reading anchor over this programmatic departure.
+        collection.delegate?.scrollViewWillBeginDragging?(collection)
         collection.scrollToItem(at: tailIndexPath, at: .bottom, animated: false)
         // Since iOS 15, cellForItem can return an offscreen prepared cell.
         // Assert the visible transition, not UIKit's private cache lifetime.

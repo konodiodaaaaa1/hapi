@@ -397,6 +397,7 @@ public final class TranscriptCollectionController<Item: Identifiable & Equatable
         if next.isInspectionPresented { layout.followsTail = false }
         // Capture at COMMIT, after any reader motion during the request.
         layout.anchorForUpdate = layout.followsTail ? nil : captureAnchor()
+        if widthChanged { print("ANCHOR capture old=\(configuredWidth) new=\(collection.bounds.width) anchor=\(String(describing: layout.anchorForUpdate)) top=\(collection.contentOffset.y)") }
         configuration = next
         // Do not compare/whitelist EnvironmentValues: custom services and
         // closure captures must propagate too, even when every Item is equal.
@@ -425,6 +426,7 @@ public final class TranscriptCollectionController<Item: Identifiable & Equatable
             self.collection.layoutIfNeeded()
             let target = self.layout.targetContentOffset(forProposedContentOffset: self.collection.contentOffset)
             self.layout.correctOffset(to: target.y)
+            if widthChanged { print("ANCHOR restore target=\(target.y) actual=\(self.collection.contentOffset.y) anchor=\(String(describing: self.layout.anchorForUpdate))") }
             self.layout.anchorForUpdate = nil
             self.applying = false
             let addedRows = self.items.contains { $0.id != next.historyControlID && !oldIDs.contains($0.id) }

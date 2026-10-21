@@ -4,7 +4,6 @@ on:
     push:
         branches:
             - main
-            - codex/verify-ios-2076
         paths:
             - 'ios/**'
             - 'shared/fixtures/**'
@@ -56,19 +55,5 @@ jobs:
                   -only-testing:HapiTests/SessionSplitPresentationTests
                   -only-testing:HapiTests/TranscriptTypographyTests
                   -only-testing:HapiTests/TranscriptGeometryTests
-            - name: Diagnose transaction-aware typography waits
-              if: failure()
-              env:
-                  HAPI_TEST_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPad-Air-11-inch-M2
-              run: |
-                  python3 - <<'PY'
-                  from pathlib import Path
-                  p = Path('ios/HapiTests/TranscriptTypographyTests.swift')
-                  s = p.read_text()
-                  s = s.replace('            driver.width = width\n            await settle { abs(view.bounds.width - width) < 1 }', '            driver.version += 1\n            let version = driver.version\n            driver.width = width\n            await settle { driver.layouts.contains(version) && abs(view.bounds.width - width) < 1 }\n            view.layoutIfNeeded()')
-                  s = s.replace('        driver.weight = .bold\n        await settle { driver.typography?.boldText == true }', '        driver.version += 1\n        let version = driver.version\n        driver.weight = .bold\n        await settle { driver.layouts.contains(version) && driver.typography?.boldText == true }\n        view.layoutIfNeeded()')
-                  p.write_text(s)
-                  PY
-                  ios/scripts/test-transcript.sh -only-testing:HapiTests/TranscriptTypographyTests
             - name: Verify localization catalog was not rewritten
               run: git diff --exit-code -- ios/Hapi/Resources/Localizable.xcstrings

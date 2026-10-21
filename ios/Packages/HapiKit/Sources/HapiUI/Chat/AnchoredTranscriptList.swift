@@ -209,6 +209,7 @@ final class TranscriptLayout: UICollectionViewLayout {
             // the reading offset. Keep its last point visible, not a later row.
             context.contentOffsetAdjustment.y += originalAttributes.frame.minY + height - 1 - viewportTop
         }
+        print("MEASURE id=\(ids[index]) original=\(originalAttributes.frame) height=\(height) delta=\(delta) top=\(viewportTop) adjust=\(context.contentOffsetAdjustment.y) anchor=\(String(describing: anchorForUpdate))")
         return context
     }
 

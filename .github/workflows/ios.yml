@@ -4,6 +4,7 @@ on:
     push:
         branches:
             - main
+            - codex/ios-full-2076
         paths:
             - 'ios/**'
             - 'shared/fixtures/**'
@@ -57,3 +58,10 @@ jobs:
                   -only-testing:HapiTests/TranscriptGeometryTests
             - name: Verify localization catalog was not rewritten
               run: git diff --exit-code -- ios/Hapi/Resources/Localizable.xcstrings
+
+            - name: Upload original Xcode test results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ios-original-results
+                  path: /tmp/hapi-transcript-tests/Logs/Test/*.xcresult

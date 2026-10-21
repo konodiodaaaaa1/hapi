@@ -13,10 +13,25 @@ jobs:
           HAPI_TEST_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPad-Air-11-inch-M2
         run: >-
           ios/scripts/test-transcript.sh
+          -only-testing:HapiTests/TranscriptGeometryTests
           -only-testing:HapiTests/TranscriptTypographyTests
           -only-testing:HapiTests/ToolTranscriptPresentationTests/testPlanPublicationUpdatesOffscreenRoundTripAndInspectorPreserveTheDocumentAndAnchor
           -test-iterations 5
           -test-repetition-relaunch-enabled NO
+      - name: Verify current-geometry compensation
+        if: failure()
+        env:
+          HAPI_TEST_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPad-Air-11-inch-M2
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('ios/Packages/HapiKit/Sources/HapiUI/Chat/AnchoredTranscriptList.swift')
+          s = p.read_text()
+          s = s.replace('        let height = max(1, preferredAttributes.size.height)', '        prepare()\n        let currentFrame = frames[index]\n        let height = max(1, preferredAttributes.size.height)')
+          s = s.replace('originalAttributes.frame.maxY <= viewportTop', 'currentFrame.maxY <= viewportTop').replace('originalAttributes.frame.minY <= viewportTop', 'currentFrame.minY <= viewportTop').replace('originalAttributes.frame.minY + height', 'currentFrame.minY + height')
+          p.write_text(s)
+          PY
+          ios/scripts/test-transcript.sh -only-testing:HapiTests/TranscriptGeometryTests -only-testing:HapiTests/TranscriptTypographyTests -only-testing:HapiTests/ToolTranscriptPresentationTests/testPlanPublicationUpdatesOffscreenRoundTripAndInspectorPreserveTheDocumentAndAnchor -test-iterations 5 -test-repetition-relaunch-enabled NO
       - uses: actions/upload-artifact@v4
         if: always()
         with:
